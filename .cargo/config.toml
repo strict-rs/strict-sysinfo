@@ -1,0 +1,4 @@
+# Repository-specific extensions live in the `stask` crate. `cargo stask x`
+# expands to `cargo run --package stask --quiet -- x`; standard workflows use
+# the installed `template` binary instead.
+alias.stask   = ["run", "--package", "stask", "--quiet", "--"]
