@@ -110,9 +110,6 @@ fn check_boot_time() {
 // when refreshing it too frequently (ie, multiple times in a row in a very small interval).
 #[test]
 fn test_consecutive_cpu_usage_update() {
-    use std::sync::Arc;
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::time::Duration;
     use sysinfo::{Pid, ProcessRefreshKind};
 
     if std::env::var("NETBSD_CI").is_ok() {
@@ -130,27 +127,23 @@ fn test_consecutive_cpu_usage_update() {
         ProcessRefreshKind::nothing().with_cpu(),
     );
 
-    let stop = Arc::new(AtomicBool::new(false));
-    // Spawning a few threads to ensure that it will actually have an impact on the CPU usage.
-    for it in 0..sys.cpus().len() / 2 + 1 {
-        let stop_c = Arc::clone(&stop);
-        std::thread::spawn(move || {
-            while !stop_c.load(Ordering::Relaxed) {
-                if it != 0 {
-                    // The first thread runs at 100% to be sure it'll be noticeable.
-                    std::thread::sleep(Duration::from_millis(1));
-                }
-            }
-        });
-    }
-
-    let mut pids = sys.processes().keys().copied().take(2).collect::<Vec<_>>();
-    let pid = std::process::id();
-    pids.push(Pid::from_u32(pid));
+    let pid = Pid::from_u32(std::process::id());
+    let mut pids = sys
+        .processes()
+        .keys()
+        .copied()
+        .filter(|candidate| *candidate != pid)
+        .take(2)
+        .collect::<Vec<_>>();
+    pids.push(pid);
     assert_eq!(pids.len(), 3);
 
     for it in 0..3 {
-        std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL + Duration::from_millis(1));
+        // Keep the measured process active for the sampling interval without spawning work that can outlive the test.
+        let sample_start = std::time::Instant::now();
+        while sample_start.elapsed() <= sysinfo::MINIMUM_CPU_UPDATE_INTERVAL {
+            std::hint::spin_loop();
+        }
         for pid in &pids {
             sys.refresh_processes_specifics(
                 ProcessesToUpdate::Some(&[*pid]),
@@ -169,7 +162,6 @@ fn test_consecutive_cpu_usage_update() {
             "using NO CPU: failed at iteration {it}",
         );
     }
-    stop.store(false, Ordering::Relaxed);
 }
 
 #[test]

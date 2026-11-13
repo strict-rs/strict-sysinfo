@@ -17,7 +17,7 @@ jobs:
           prepare: |
             pkg install -y curl
             curl https://sh.rustup.rs -sSf --output rustup.sh
-            sh rustup.sh -y --profile=minimal --default-toolchain=1.95
+            sh rustup.sh -y --profile=minimal --default-toolchain=1.100
             . $HOME/.cargo/env
             rustup --version
             rustup component add clippy

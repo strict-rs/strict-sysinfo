@@ -11,13 +11,13 @@ jobs:
     # `aarch64-apple-ios-sim` uses the same `target_os = "ios"` code as `aarch64-apple-ios`, but
     # it can be built natively on macOS (arm64) runners using the Xcode SDK, no need for `cross`.
     runs-on: macos-latest
-    name: Check iOS simulator (rust ${{ matrix.toolchain }})
+    name: Check iOS simulator
     steps:
       - uses: actions/checkout@v7
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.95.0 # minimum supported rust version
+          toolchain: "1.100.0" # minimum supported rust version
           targets: aarch64-apple-ios-sim
       - name: Check
         env:
