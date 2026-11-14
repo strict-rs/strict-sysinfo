@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -23,27 +24,38 @@ void print_process(CProcess process) {
     sysinfo_rstring_free(exe);
 }
 
-void check_tasks(CSystem system) {
-    bool task_loop(pid_t pid, void *system) {
-        CProcess process = sysinfo_process_by_pid((CSystem*)system, pid);
-        if (process) {
-            printf("  ");
-            print_process(process);
-        }
-        return true;
+static bool task_loop(pid_t pid, void *data) {
+    CSystem system = data;
+    CProcess process = sysinfo_process_by_pid(system, pid);
+    if (process) {
+        printf("  ");
+        print_process(process);
     }
+    return true;
+}
 
-    void *sleeping_func(void *data) {
-        sleep(3);
-        return data;
-    }
+static void *sleeping_func(void *data) {
+    sleep(3);
+    return data;
+}
+
+static int check_tasks(CSystem system) {
     pthread_t thread;
-    pthread_create(&thread, NULL, sleeping_func, NULL);
+    int status = pthread_create(&thread, NULL, sleeping_func, NULL);
+    if (status != 0) {
+        fprintf(stderr, "pthread_create: %s\n", strerror(status));
+        return status;
+    }
     sysinfo_refresh_processes(system);
     CProcess process = sysinfo_process_by_pid(system, getpid());
     printf("\n== Task(s) for current process: ==\n");
     print_process(process);
     printf("Got %ld task(s)\n", sysinfo_process_tasks(process, task_loop, system));
+    status = pthread_join(thread, NULL);
+    if (status != 0) {
+        fprintf(stderr, "pthread_join: %s\n", strerror(status));
+    }
+    return status;
 }
 
 // Show only 10 processes.
@@ -96,9 +108,9 @@ int main() {
         i,
         nb_processes
     );
-    check_tasks(system);
+    int task_status = check_tasks(system);
     // we can now free the CSystem and the CNetworks objects.
     sysinfo_destroy(system);
     sysinfo_networks_destroy(networks);
-    return 0;
+    return task_status == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

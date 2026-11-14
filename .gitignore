@@ -49,3 +49,17 @@ tags
 **.o
 simple
 .idea/
+**/*.rmeta
+cov/
+/report/
+/metrics/
+/mutants.out/
+/mutants.out.old/
+**/*.bk
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.envrc
+.direnv/

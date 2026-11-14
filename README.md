@@ -1,3 +1,5 @@
+<!-- Do not edit; generated file. -->
+
 # sysinfo [![][img_crates]][crates] [![][img_doc]][doc]
 
 `sysinfo` is a crate used to get a system's information.
@@ -17,7 +19,7 @@ It currently supports the following OSes (alphabetically sorted):
 
 You can still compile and use `sysinfo` on non-supported OSes, it'll simply do nothing.
 
-The minimum-supported version of `rustc` is **1.95**.
+The minimum supported version of `rustc` is `1.100`.
 
 ## Usage
 

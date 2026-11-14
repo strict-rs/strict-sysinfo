@@ -1,14 +1,14 @@
 [package]
 name = "sysinfo"
-version = "0.40.3"
-authors = ["Guillaume Gomez <guillaume1.gomez@gmail.com>"]
+version = { workspace = true }
+authors = { workspace = true }
 description = "Library to get system information such as processes, CPUs, disks, components and networks"
-repository = "https://github.com/GuillaumeGomez/sysinfo"
-license = "MIT"
-rust-version = "1.95"
+repository = { workspace = true }
+license = { workspace = true }
+rust-version = { workspace = true }
 exclude = ["/test-unknown"]
 keywords = ["system-information", "disk", "process", "network", "cpu"]
-edition = "2024"
+edition = { workspace = true }
 
 [lib]
 name = "sysinfo"
@@ -140,33 +140,68 @@ cargo-args = ["-Zbuild-std"]
 rustdoc-args = ["--generate-link-to-definition"]
 
 [dependencies]
-memchr = { version = "2.5", optional = true }
-rayon = { version = "^1.8", optional = true }
-serde = { version = "^1.0.190", optional = true, features = ["derive"] }
+memchr = { workspace = true, optional = true }
+rayon = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
-ntapi = { version = "0.4", optional = true }
-# Support a range of versions in order to avoid duplication of this crate. Make sure to test all
-# versions when bumping to a new release, and only increase the minimum when absolutely necessary.
-windows = { version = ">=0.62, <0.63", optional = true }
+ntapi = { workspace = true, optional = true }
+windows = { workspace = true, optional = true }
 
 [target.'cfg(not(any(target_os = "unknown", target_arch = "wasm32")))'.dependencies]
-libc = "^0.2.173"
+libc = { workspace = true }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-objc2-core-foundation = { version = "0.3.2", optional = true, default-features = false, features = [
-    "std",
-] }
-objc2-io-kit = { version = "0.3.2", optional = true, default-features = false, features = [
-    "std",
-    "libc",
-] }
+objc2-core-foundation = { workspace = true, optional = true, default-features = false }
+objc2-io-kit = { workspace = true, optional = true, default-features = false }
 
 # OpenDirectory framework is macOS-only; binding it on iOS triggers a linker
 # error (`framework 'OpenDirectory' not found`) because the framework does not
 # ship on iOS.
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2-open-directory = { version = "0.3.2", optional = true, default-features = false, features = [
+objc2-open-directory = { workspace = true, optional = true, default-features = false }
+
+[dev-dependencies]
+serde_json = { workspace = true }   # Used in documentation tests.
+bstr = { workspace = true }
+tempfile = { workspace = true }
+itertools = { workspace = true }
+
+[target.'cfg(windows)'.dev-dependencies]
+windows = { workspace = true, features = ["Win32_System_Diagnostics_ProcessSnapshotting"] }
+
+[[example]]
+name = "simple"
+path = "examples/simple.rs"
+required-features = ["default"]
+doc-scrape-examples = true
+
+[workspace]
+members = ["./", "stask"]
+resolver = "3"
+
+[workspace.dependencies]
+# Panic-free test vocabulary, consumed as an external git crate, tracking the
+# crate's main branch. The version requirement (kept in sync with the crate's own
+# version) keeps it off cargo-deny's wildcard ban; `Cargo.lock` records the
+# resolved commit, refreshed by `just update`.
+strict-test-support = { version = "0.1.1", git = "https://github.com/earthlings-dev/strict-test-support-rs.git", branch = "main"}
+# Generic extension capabilities and the consumer-compiled `x` registry.
+template-core = { version = "0.4.0", git = "https://github.com/earthlings-dev/template-rs.git", branch = "main"}
+template-stask = { version = "0.4.0", git = "https://github.com/earthlings-dev/template-rs.git", branch = "main"}
+bstr = "1.13.1"
+itertools = "0.15.0"
+libc = "^0.2.191"
+memchr = { version = "2.8"}
+ntapi = { version = "0.4"}
+objc2-core-foundation = { version = "0.3.2", default-features = false, features = [
+    "std",
+] }
+objc2-io-kit = { version = "0.3.2", default-features = false, features = [
+    "std",
+    "libc",
+] }
+objc2-open-directory = { version = "0.3.2", default-features = false, features = [
     "objc2-core-foundation",
     "std",
     "CFODNode", 
@@ -176,18 +211,22 @@ objc2-open-directory = { version = "0.3.2", optional = true, default-features = 
     "CFOpenDirectory",
     "CFOpenDirectoryConstants",
 ] }
+rayon = { version = "^1.12"}
+serde = { version = "^1.0.229", features = ["derive"] }
+serde_json = "1"
+tempfile = "3.27"
+# Keep the supported version range so consumers can share one Windows dependency.
+windows = { version = ">=0.62, <0.63"}
 
-[dev-dependencies]
-serde_json = "1.0"   # Used in documentation tests.
-bstr = "1.9.0"
-tempfile = "3.9"
-itertools = "0.14.0"
+[workspace.package]
+authors = ["Guillaume Gomez <guillaume1.gomez@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/strict-rs/strict-sysinfo"
+version = "0.40.3"
+edition = "2024"
+publish = false
+readme = "README.md"
+rust-version = "1.100"
 
-[target.'cfg(windows)'.dev-dependencies]
-windows = { version = ">=0.62, <0.63", features = ["Win32_System_Diagnostics_ProcessSnapshotting"] }
-
-[[example]]
-name = "simple"
-path = "examples/simple.rs"
-required-features = ["default"]
-doc-scrape-examples = true
+[patch."https://github.com/strict-rs/strict-sysinfo"]
+sysinfo = { path = "." }
